@@ -65,26 +65,25 @@ status:
 import re
 
 try:
-    from botocore.exceptions import ClientError
+    import botocore
 except ImportError:
-    pass  # caught by imported HAS_BOTO3
+    pass  # caught by AnsibleAWSModule
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.ec2 import (get_aws_connection_info, boto3_conn, ec2_argument_spec,
-                                      camel_dict_to_snake_dict, HAS_BOTO3)
+from ansible.module_utils.common.dict_transformations import camel_dict_to_snake_dict
+
+from ansible_collections.amazon.aws.plugins.module_utils.core import AnsibleAWSModule
+from ansible_collections.amazon.aws.plugins.module_utils.ec2 import get_aws_connection_info, boto3_conn, HAS_BOTO3
 
 def main():
 
-    argument_spec = ec2_argument_spec()
-    argument_spec.update(
-        dict(
-            asg_name=dict(type='str'),
-            lifecycle_hook_name=dict(type='str'),
-            lifecycle_action_result=dict(type='str'),
-            instance_id=dict(type='str')
-        )
+    argument_spec = dict(
+        asg_name=dict(type='str'),
+        lifecycle_hook_name=dict(type='str'),
+        lifecycle_action_result=dict(type='str'),
+        instance_id=dict(type='str')
     )
-    module = AnsibleModule(argument_spec=argument_spec)
+
+    module = AnsibleAWSModule(argument_spec=argument_spec)
     if not HAS_BOTO3:
         module.fail_json(msg='boto3 required for this module')
 
