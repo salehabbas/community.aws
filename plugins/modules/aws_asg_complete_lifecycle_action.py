@@ -5,19 +5,13 @@
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
-
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
-
-
 DOCUMENTATION = '''
 ---
 module: aws_asg_complete_lifecycle_action
 short_description: Completes the lifecycle action of an instance
 description:
   - Used to complete the lifecycle action for the specified instance with the specified result
-version_added: "2.2"
+version_added: "1.0.0"
 requirements: [ boto3 ]
 author:
     - Saleh Abbas (@salehabbas) <saleh.abbas@thetradedesk.com>
@@ -25,22 +19,26 @@ options:
   asg_name:
     description:
       - The name of the Auto Scaling group which the instance belongs to.
+    type: str
     required: true
   lifecycle_hook_name:
     description:
       - The name of the lifecycle hook to complete.
+    type: str
     required: true
   lifecycle_action_result:
     description:
       - The action for the lifecycle hook to take. It can be either CONTINUE or ABANDON.
+    type: str
     required: true
   instance_id:
     description:
       - The ID of the instance.
+    type: str
     required: true
 extends_documentation_fragment:
-    - aws
-    - ec2
+    - amazon.aws.aws
+    - amazon.aws.ec2
 '''
 
 EXAMPLES = '''
@@ -69,18 +67,15 @@ try:
 except ImportError:
     pass  # caught by AnsibleAWSModule
 
-from ansible.module_utils.common.dict_transformations import camel_dict_to_snake_dict
-
 from ansible_collections.amazon.aws.plugins.module_utils.core import AnsibleAWSModule
 from ansible_collections.amazon.aws.plugins.module_utils.ec2 import get_aws_connection_info, boto3_conn, HAS_BOTO3
 
 def main():
-
     argument_spec = dict(
-        asg_name=dict(type='str'),
-        lifecycle_hook_name=dict(type='str'),
-        lifecycle_action_result=dict(type='str'),
-        instance_id=dict(type='str')
+        asg_name=dict(required=True, type='str'),
+        lifecycle_hook_name=dict(required=True, type='str'),
+        lifecycle_action_result=dict(required=True, type='str'),
+        instance_id=dict(required=True, type='str')
     )
 
     module = AnsibleAWSModule(argument_spec=argument_spec)
@@ -95,8 +90,8 @@ def main():
     try:
         region, ec2_url, aws_connect_kwargs = get_aws_connection_info(module, boto3=True)
         autoscaling = boto3_conn(module, conn_type='client', resource='autoscaling', region=region, endpoint=ec2_url, **aws_connect_kwargs)
-    except ClientError as e:
-        module.fail_json(msg=e.message, **camel_dict_to_snake_dict(e.response))
+    except (botocore.exceptions.ClientError, botocore.exceptions.BotoCoreError) as e:
+        module.fail_json_aws(e, msg="Failed to completes the lifecycle action")
 
     results = autoscaling.complete_lifecycle_action(
         LifecycleHookName=lifecycle_hook_name,
